@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Unlicense OR CC0-1.0
  */
+#pragma once
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -27,7 +28,26 @@
 #include "esp_hidh.h"
 #include "esp_hid_gap.h"
 
-static const char *TAG = "ESP_HIDH_DEMO";
+static const char *TAG = "GBG_BT_HIDH";
+
+static pthread_mutex_t bt_mutex;
+
+enum bt_messages_t{UP = 0x06, DOWN = 0x07, _LEFT = 0x08, _RIGHT = 0x09, A = 0x0a, B = 0x0d, X = 0x0b, Y = 0x0c, SELECT = 0x11, START = 12, L = 0x0e, R = 0x10, EMPTY = 0x00};
+enum bt_drive_t {FWD = UP, RVR = DOWN, STOP = 0} bt_drive;
+enum bt_turn_t {LEFT = _LEFT, RIGHT = _RIGHT, STRAIGHT = 0} bt_turn;
+bool bt_in_control = false;
+
+bool is_bt_drive_msg(int cmd)
+{
+    return cmd==FWD || cmd==RVR;
+}
+
+bool is_bt_turn_msg(int cmd)
+{
+    return cmd==LEFT || cmd==RIGHT;
+}
+
+
 
 void hidh_callback(void *handler_args, esp_event_base_t base, int32_t id, void *event_data)
 {
@@ -52,9 +72,42 @@ void hidh_callback(void *handler_args, esp_event_base_t base, int32_t id, void *
     }
     case ESP_HIDH_INPUT_EVENT: {
         const uint8_t *bda = esp_hidh_dev_bda_get(param->input.dev);
-        
-        ESP_LOGI(TAG, ESP_BD_ADDR_STR " INPUT: %8s, MAP: %2u, ID: %3u, Len: %d, Data:", ESP_BD_ADDR_HEX(bda), esp_hid_usage_str(param->input.usage), param->input.map_index, param->input.report_id, param->input.length);
-        ESP_LOG_BUFFER_HEX(TAG, param->input.data, param->input.length);
+        if(pthread_mutex_lock(&bt_mutex)==0)
+        {
+            for(int i=2; i<param->input.length; ++i)
+            {
+                bt_messages_t msg = static_cast<bt_messages_t>(param->input.data[i]);
+                if(msg == EMPTY)
+                {
+                    if(i==2)
+                    {
+                        bt_in_control = false;
+                        bt_drive = STOP;
+                        bt_turn = STRAIGHT;
+                    }
+                    break;
+                }
+                else if(is_bt_drive_msg(msg))
+                {
+                    bt_in_control = true;
+                    bt_drive = static_cast<bt_drive_t>(msg);
+                    continue;
+                }
+                else if(is_bt_turn_msg(msg))
+                {
+                    bt_in_control = true;
+                    bt_turn = static_cast<bt_turn_t>(msg);
+                    continue;
+                }
+                else{
+                    continue;
+                }
+            }
+            ESP_LOGI(TAG, "bt_in_control: %02x, bt_drive: %02x, bt_turn: %02x", bt_in_control, bt_drive, bt_turn);
+            pthread_mutex_unlock(&bt_mutex);
+        }
+        // ESP_LOGI(TAG, ESP_BD_ADDR_STR " INPUT: %8s, MAP: %2u, ID: %3u, Len: %d, Data:", ESP_BD_ADDR_HEX(bda), esp_hid_usage_str(param->input.usage), param->input.map_index, param->input.report_id, param->input.length);
+        // ESP_LOG_BUFFER_HEX(TAG, param->input.data, param->input.length);
         break;
     }
     case ESP_HIDH_FEATURE_EVENT: {
@@ -127,6 +180,9 @@ void hid_demo_task(void *pvParameters)
 void init_bluetooth()
 {
     esp_err_t ret;
+    if(pthread_mutex_init (&bt_mutex, NULL) != 0){
+        printf("Failed to initialize the spiffs mutex");
+    }
 #if HID_HOST_MODE == HIDH_IDLE_MODE
     ESP_LOGE(TAG, "Please turn on BT HID host or BLE!");
     return;
