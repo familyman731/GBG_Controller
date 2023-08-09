@@ -18,15 +18,15 @@
 namespace GBG
 {
 
-#define SPD_INPUT GPIO_NUM_2
-#define FWD_INPUT GPIO_NUM_3
-#define RVR_INPUT GPIO_NUM_4
-#define RIGHT_INPUT GPIO_NUM_5
-#define LEFT_INPUT GPIO_NUM_6
-#define FWD_PWM GPIO_NUM_7
-#define RVR_PWM GPIO_NUM_8
-#define RIGHT_PWM GPIO_NUM_9
-#define LEFT_PWM GPIO_NUM_10
+#define SPD_INPUT GPIO_NUM_33
+#define FWD_INPUT GPIO_NUM_34
+#define RVR_INPUT GPIO_NUM_35
+#define RIGHT_INPUT GPIO_NUM_36
+#define LEFT_INPUT GPIO_NUM_39
+#define FWD_PWM GPIO_NUM_13
+#define RVR_PWM GPIO_NUM_14
+#define RIGHT_PWM GPIO_NUM_15
+#define LEFT_PWM GPIO_NUM_16
 
 class MotorController
 {
@@ -45,10 +45,9 @@ public:
         rvr_input_pin{_rvr_input_pin}
 
     {
-        mcpwm_init(unit, timer, &pwm_config);    //Configure PWM0A & PWM0B with above settings
         mcpwm_gpio_init(unit, unit == MCPWM_UNIT_0 ? MCPWM0A : MCPWM1A, fwd_pwm_pin);
         mcpwm_gpio_init(unit, unit == MCPWM_UNIT_0 ? MCPWM0B : MCPWM1B, rvr_pwm_pin);
-
+        mcpwm_init(unit, timer, &pwm_config);    //Configure PWM0A & PWM0B with above settings
         gpio_set_direction(fwd_input_pin, GPIO_MODE_INPUT);
         gpio_set_pull_mode(fwd_input_pin, GPIO_PULLDOWN_ONLY);
         gpio_set_direction(rvr_input_pin, GPIO_MODE_INPUT);        
@@ -57,6 +56,7 @@ public:
 
     void drive(bool drive_fwd, float duty_cycle)
     {
+        ESP_LOGI(name.c_str(), "driving %s", drive_fwd ? "pos" : "neg");
         mcpwm_set_signal_low(unit, timer, drive_fwd ? MCPWM_GEN_B : MCPWM_GEN_A);
         mcpwm_set_duty(unit, timer, drive_fwd ? MCPWM_GEN_A : MCPWM_GEN_B, duty_cycle);
         mcpwm_set_duty_type(unit, timer, drive_fwd ? MCPWM_GEN_B : MCPWM_GEN_A, MCPWM_DUTY_MODE_0); //call this each time, if operator was previously in low/high state
@@ -66,11 +66,9 @@ public:
     {
         if(gpio_get_level(fwd_input_pin))
         {
-            ESP_LOGI(name.c_str(), "driving pos");
             drive(true, duty_cycle);
         }else if(gpio_get_level(rvr_input_pin))
         {
-            ESP_LOGI(name.c_str(), "driving neg");
             drive(false, duty_cycle);
         }else{
             stop();
@@ -79,7 +77,7 @@ public:
 
     void stop()
     {
-        ESP_LOGI(name.c_str(), "stopping");
+        // ESP_LOGI(name.c_str(), "stopping");
         mcpwm_set_signal_low(unit, timer, MCPWM_GEN_A);
         mcpwm_set_signal_low(unit, timer, MCPWM_GEN_B);
     }
@@ -99,10 +97,9 @@ public:
         name{"car_control"},
         move{"move", MCPWM_UNIT_0, FWD_PWM, RVR_PWM, FWD_INPUT, RVR_INPUT},
         steer{"steer", MCPWM_UNIT_1, RIGHT_PWM, LEFT_PWM, RIGHT_INPUT, LEFT_INPUT},
-        duty_cycle{0.0}
+        duty_cycle{10}
         // bt_in_control{false}
     {
-        ESP_LOGD(name.c_str(), "car initialized");
     }
 
     static std::shared_ptr<CarController> get_or_create()
@@ -117,13 +114,10 @@ public:
 
     void drive()
     {
-        ESP_LOGD(name.c_str(), "drive");
         if(pthread_mutex_lock(&bt_mutex)==0)
         {
-            ESP_LOGD(name.c_str(), "mutex");
             if(bt_in_control)
             {
-                ESP_LOGD(name.c_str(), "bt_in_control");
                 if(bt_drive)
                 {
                     move.drive(bt_drive==FWD, duty_cycle);
@@ -134,7 +128,6 @@ public:
                 }
                 pthread_mutex_unlock(&bt_mutex);
             } else {
-                ESP_LOGD(name.c_str(), "gpio");
                 pthread_mutex_unlock(&bt_mutex);
                 move.gpio_drive(duty_cycle);
                 steer.gpio_drive(duty_cycle);
