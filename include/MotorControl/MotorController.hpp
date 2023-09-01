@@ -7,26 +7,13 @@
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 // #include "driver/mcpwm_prelude.h"
-#include "driver/gpio.h"
 #include "esp_attr.h"
-
 #include "driver/mcpwm.h"
 #include "soc/mcpwm_periph.h"
-
 #include "bluetooth_hid/esp_hid_host.h"
 
 namespace GBG
 {
-
-#define SPD_INPUT GPIO_NUM_33
-#define FWD_INPUT GPIO_NUM_34
-#define RVR_INPUT GPIO_NUM_35
-#define RIGHT_INPUT GPIO_NUM_36
-#define LEFT_INPUT GPIO_NUM_39
-#define FWD_PWM GPIO_NUM_13
-#define RVR_PWM GPIO_NUM_14
-#define RIGHT_PWM GPIO_NUM_15
-#define LEFT_PWM GPIO_NUM_16
 
 class MotorController
 {
@@ -56,7 +43,7 @@ public:
 
     void drive(bool drive_fwd, float duty_cycle)
     {
-        ESP_LOGI(name.c_str(), "driving %s", drive_fwd ? "pos" : "neg");
+        // ESP_LOGI(name.c_str(), "driving %s", drive_fwd ? "pos" : "neg");
         mcpwm_set_signal_low(unit, timer, drive_fwd ? MCPWM_GEN_B : MCPWM_GEN_A);
         mcpwm_set_duty(unit, timer, drive_fwd ? MCPWM_GEN_A : MCPWM_GEN_B, duty_cycle);
         mcpwm_set_duty_type(unit, timer, drive_fwd ? MCPWM_GEN_B : MCPWM_GEN_A, MCPWM_DUTY_MODE_0); //call this each time, if operator was previously in low/high state
@@ -80,59 +67,6 @@ public:
         // ESP_LOGI(name.c_str(), "stopping");
         mcpwm_set_signal_low(unit, timer, MCPWM_GEN_A);
         mcpwm_set_signal_low(unit, timer, MCPWM_GEN_B);
-    }
-};
-
-class CarController
-{
-    std::string name;
-    MotorController move;
-    MotorController steer;
-    float duty_cycle;
-    // bool bt_in_control;
-    static std::shared_ptr<CarController> car_controller;
-
-public:
-    CarController():
-        name{"car_control"},
-        move{"move", MCPWM_UNIT_0, FWD_PWM, RVR_PWM, FWD_INPUT, RVR_INPUT},
-        steer{"steer", MCPWM_UNIT_1, RIGHT_PWM, LEFT_PWM, RIGHT_INPUT, LEFT_INPUT},
-        duty_cycle{10}
-        // bt_in_control{false}
-    {
-    }
-
-    static std::shared_ptr<CarController> get_or_create()
-    {
-        if(car_controller)
-        {
-            return car_controller;
-        }else{
-            return car_controller = std::make_shared<CarController>();
-        }
-    }
-
-    void drive()
-    {
-        if(pthread_mutex_lock(&bt_mutex)==0)
-        {
-            if(bt_in_control)
-            {
-                if(bt_drive)
-                {
-                    move.drive(bt_drive==FWD, duty_cycle);
-                }
-                if(bt_turn)
-                {
-                    steer.drive(bt_turn==RIGHT, duty_cycle);
-                }
-                pthread_mutex_unlock(&bt_mutex);
-            } else {
-                pthread_mutex_unlock(&bt_mutex);
-                move.gpio_drive(duty_cycle);
-                steer.gpio_drive(duty_cycle);
-            }
-        }
     }
 };
 }

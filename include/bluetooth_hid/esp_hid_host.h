@@ -27,12 +27,12 @@
 
 #include "esp_hidh.h"
 #include "esp_hid_gap.h"
+#include "io.hpp"
 
 static const char *TAG = "GBG_BT_HIDH";
 
 static pthread_mutex_t bt_mutex;
 
-enum bt_messages_t{UP = 0x06, DOWN = 0x07, _LEFT = 0x08, _RIGHT = 0x09, A = 0x0a, B = 0x0d, X = 0x0b, Y = 0x0c, SELECT = 0x11, START = 12, L = 0x0e, R = 0x10, EMPTY = 0x00};
 enum bt_drive_t {FWD = UP, RVR = DOWN, STOP = 0} bt_drive;
 enum bt_turn_t {LEFT = _LEFT, RIGHT = _RIGHT, STRAIGHT = 0} bt_turn;
 bool bt_in_control = false;
