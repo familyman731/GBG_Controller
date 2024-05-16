@@ -33,10 +33,6 @@ static const char *TAG = "GBG_BT_HIDH";
 
 static pthread_mutex_t bt_mutex;
 
-enum bt_drive_t {FWD = UP, RVR = DOWN, STOP = 0} bt_drive;
-enum bt_turn_t {LEFT = _LEFT, RIGHT = _RIGHT, STRAIGHT = 0} bt_turn;
-bool bt_in_control = false;
-
 bool is_bt_drive_msg(int cmd)
 {
     return cmd==FWD || cmd==RVR;
