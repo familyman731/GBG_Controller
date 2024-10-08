@@ -7,81 +7,69 @@
 //==========================================================================
 */
 
-#include "gpio.h"
+// #include "gpio.h"
 #include "bluetooth.h"
 
 // States
-bool FWD = 0;
-bool RVR = 0;
-bool LEFT = 0;
-bool RIGHT = 0;
-bool ESTOP = 0;
-int drive_speed = 255;
-int steer_speed = 127;
-bool bt_in_control = false;
+// bool FWD = 0;
+// bool RVR = 0;
+// bool LEFT = 0;
+// bool RIGHT = 0;
+// bool ESTOP = 0;
+// int drive_speed = 255;
+// int steer_speed = 127;
+// bool bt_in_control = false;
 
-void digital_update(const int &pin, bool &state) {
-  bool new_state = digitalRead(pin);
-  if (new_state != state) {
-    Serial.print("pin ");
-    Serial.print(pin);
-    Serial.print(": ");
-    Serial.println(new_state);
-  }
-  state = new_state;
-}
-
-void analog_update(const int &pin, int &val) {
-  int new_val = analogRead(pin);
-  if (abs(new_val - val) > 20) {
-    Serial.print("pin ");
-    Serial.print(pin);
-    Serial.print("new_val: ");
-    Serial.println(new_val);
-  }
-  val = new_val;
-}
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
-  pinMode(S_RPWM_Output, OUTPUT);
-  pinMode(S_LPWM_Output, OUTPUT);
-  pinMode(D_RPWM_Output, OUTPUT);
-  pinMode(D_LPWM_Output, OUTPUT);
-  pinMode(FWD_Input, INPUT_PULLDOWN);
-  pinMode(RVR_Input, INPUT_PULLDOWN);
-  pinMode(LEFT_Input, INPUT_PULLDOWN);
-  pinMode(RIGHT_Input, INPUT_PULLDOWN);
-
+  // init_gpio();
   init_bluetooth();
 }
 void loop() {
-  digital_update(FWD_Input, FWD);
-  digital_update(RVR_Input, RVR);
-  digital_update(LEFT_Input, LEFT);
-  digital_update(RIGHT_Input, RIGHT);
 
-  if (RIGHT == HIGH) {
-    analogWrite(S_RPWM_Output, steer_speed);
-    analogWrite(S_LPWM_Output, 0);
-  } else if (LEFT == HIGH) {
-    analogWrite(S_LPWM_Output, steer_speed);
-    analogWrite(S_RPWM_Output, 0);
-  } else {
-    analogWrite(S_LPWM_Output, 0);
-    analogWrite(S_RPWM_Output, 0);
-  }
+// This call fetches all the controllers' data.
+    // Call this function in your main loop.
+    bool dataUpdated = BP32.update();
+    if (dataUpdated)
+        processControllers();
 
-  if (FWD == HIGH) {
-    analogWrite(D_RPWM_Output, drive_speed);
-    analogWrite(D_LPWM_Output, 0);
-    Serial.println(drive_speed);
-  } else if (RVR == HIGH) {
-    analogWrite(D_LPWM_Output, drive_speed);
-    analogWrite(D_RPWM_Output, 0);
-  } else {
-    analogWrite(D_LPWM_Output, 0);
-    analogWrite(D_RPWM_Output, 0);
-  }
+    // The main loop must have some kind of "yield to lower priority task" event.
+    // Otherwise, the watchdog will get triggered.
+    // If your main loop doesn't have one, just add a simple `vTaskDelay(1)`.
+    // Detailed info here:
+    // https://stackoverflow.com/questions/66278271/task-watchdog-got-triggered-the-tasks-did-not-reset-the-watchdog-in-time
+
+        vTaskDelay(1);
+    delay(150);
+
+  // digital_update(FWD_Input, FWD);
+  // digital_update(RVR_Input, RVR);
+  // digital_update(LEFT_Input, LEFT);
+  // digital_update(RIGHT_Input, RIGHT);
+
+  // if (RIGHT == HIGH) {
+  //   analogWrite(S_RPWM_Output, steer_speed);
+  //   analogWrite(S_LPWM_Output, 0);
+  // } else if (LEFT == HIGH) {
+  //   analogWrite(S_LPWM_Output, steer_speed);
+  //   analogWrite(S_RPWM_Output, 0);
+  // } else {
+  //   analogWrite(S_LPWM_Output, 0);
+  //   analogWrite(S_RPWM_Output, 0);
+  // }
+
+  // if (FWD == HIGH) {
+  //   analogWrite(D_RPWM_Output, drive_speed);
+  //   analogWrite(D_LPWM_Output, 0);
+  //   Serial.println(drive_speed);
+  // } else if (RVR == HIGH) {
+  //   analogWrite(D_LPWM_Output, drive_speed);
+  //   analogWrite(D_RPWM_Output, 0);
+  // } else {
+  //   analogWrite(D_LPWM_Output, 0);
+  //   analogWrite(D_RPWM_Output, 0);
+  // }
+
 }
