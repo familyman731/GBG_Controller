@@ -12,3 +12,4 @@ Requirements:
 	*	Need way to clear and repair controller (Bluepad has forgetBluetoothKeys function, just need to decide how to implement)
 *	Outputs
 	*	PWM to motor drivers
+*	Reference Schematic.pdf for gpio pins
