@@ -1,0 +1,14 @@
+Requirements:
+*	Inputs
+	*	Child will use joystick to control vehicle
+		*	FWD, RVR, LEFT, RIGHT will each be wired to a separate input pin
+		*	Drive (FWD, RVR) and Turn (LEFT, RIGHT) can be high at the same time
+	*	Bluetooth controller
+		*	DPad maps to drive/turn commands (UP = FWD, RIGHT = RIGHT, etc)
+		*	X maps to ESTOP (while ESTOP high, joystick controls are ignored). Does not need held (acts as a toggle)
+		*	R maps to increase drive speed
+		*	L maps to decrease drive speed
+		*	When receiving drive/turn commands from Bluetooth, ignore joystick inputs
+	*	Need way to clear and repair controller (Bluepad has forgetBluetoothKeys function, just need to decide how to implement)
+*	Outputs
+	*	PWM to motor drivers
