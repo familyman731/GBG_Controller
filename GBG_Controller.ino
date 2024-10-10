@@ -10,7 +10,6 @@
 #include "gpio.h"
 #include "bluetooth.h"
 
-int drive_speed = 0;
 int steer_speed = 127;
 
 void checkBtUnpair(){
