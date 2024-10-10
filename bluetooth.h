@@ -2,6 +2,10 @@
 
 #include <Bluepad32.h>
 
+bool lock_joystick = false;
+bool lock_joystick_button = false;
+bool bt_in_control = false;
+
 enum bt_messages_t{
                     UP = -512, 
                    DOWN = 511, 
@@ -19,8 +23,6 @@ enum bt_messages_t{
 
 enum bt_drive_t {btFWD = UP, btRVR = DOWN, btSTOP = 0} bt_drive;
 enum bt_turn_t {btLEFT = _LEFT, btRIGHT = _RIGHT, btSTRAIGHT = 0} bt_turn;
-
-bool lock_joystick = 0;
 
 ControllerPtr myControllers[BP32_MAX_GAMEPADS];
 
@@ -114,16 +116,26 @@ void dumpGamepad(ControllerPtr ctl) {
 void processGamepad(ControllerPtr ctl) {
     
   if (ctl->buttons() & X){
-    lock_joystick = !lock_joystick;
-    if(lock_joystick){
-      Serial.println("Joystick Locked");
+    lock_joystick_button = !lock_joystick_button;
+    if(lock_joystick_button){
+      Serial.println("Parent locked joystick");
     }else{
-      Serial.println("Joystick unlocked");
+      Serial.println("Parent unlocked joystick");
     }
   }
 
   bt_drive = static_cast<bt_drive_t>(ctl->axisY());
   bt_turn = static_cast<bt_turn_t>(ctl->axisX());
+
+  bt_in_control = !(bt_drive == EMPTY & bt_turn == EMPTY);
+
+  lock_joystick = bt_in_control || lock_joystick_button;
+
+  if(lock_joystick){
+    Serial.println("joystick locked");
+  }else{
+    Serial.println("joystick unlocked");
+  }
 
   // Another way to query controller data is by getting the buttons() function.
   // See how the different "dump*" functions dump the Controller info.

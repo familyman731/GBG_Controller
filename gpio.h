@@ -1,22 +1,25 @@
-#include "esp32-hal-gpio.h"
 #pragma once
+#include "esp32-hal-gpio.h"
+
+#define LED 2
 
 // Motor Driver Pins
-const int S_RPWM_Output = 2;  //STEER RIGHT
-const int S_LPWM_Output = 15;  //STEER LEFT
-const int D_RPWM_Output = 0;  //DRIVE FORWARD
-const int D_LPWM_Output = 4;  //DRIVE REVERSE
+#define S_RPWM_Output 32  //STEER RIGHT
+#define S_LPWM_Output 33  //STEER LEFT
+#define D_RPWM_Output 25  //DRIVE FORWARD
+#define D_LPWM_Output 26  //DRIVE REVERSE
 
 // Driver Pins
-const int FWD_Input = 12;  //FWD SHIFTER/JOYSTICK FWD
-const int RVR_Input = 14;  //REVERSE SHIFT/JOYSTICK REVERSE
-const int RIGHT_Input = 27;
-const int LEFT_Input = 26;
+#define FWD_Input 36  //FWD SHIFTER/JOYSTICK FWD
+#define RVR_Input 39  //REVERSE SHIFT/JOYSTICK REVERSE
+#define RIGHT_Input 34
+#define LEFT_Input 35
 
 // BT Pairing Pin
-const int bt_Pair_Input = 13;
+#define bt_Pair_Input 13
 
 void init_gpio(){
+  pinMode(LED, OUTPUT);
   pinMode(S_RPWM_Output, OUTPUT);
   pinMode(S_LPWM_Output, OUTPUT);
   pinMode(D_RPWM_Output, OUTPUT);
